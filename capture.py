@@ -4,16 +4,13 @@ import cv2
 import requests
 import logging
 import argparse
+import os
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] %(message)s')
 
 logger = logging.getLogger()
 
-def send_image(url, image_bytes):
-    files = {"image": image_bytes}
-    r = requests.post(url, files=files)
-    return r
 
 class ImageInfo(object):
     def __init__(self):
@@ -68,6 +65,10 @@ class MotionDetector(object):
                 logger.info("Motion detection stopped by KeyboardInterrupt")
                 raise StopIteration
 
+def send_image(url, image_bytes):
+    files = {"image": image_bytes}
+    r = requests.post(url, files=files)
+    return r
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple motion detector")
@@ -76,10 +77,19 @@ if __name__ == "__main__":
     parser.add_argument("--height", metavar="height", type=int, default=960, nargs='?', help="Height of image")
     parser.add_argument("--cam", metavar="cam", type=int, default=0, nargs='?', help="Camera ID")
     parser.add_argument("--show", metavar="show", type=bool, default=False, nargs='?', help="Show images")
+    parser.add_argument("--write", metavar="write", type=bool, default=False, nargs='?', help="Write images to file" )
+    parser.add_argument("--url", metavar="url", type=str, default="http://0.0.0.0:8000/", nargs='?', help="Remote URL")
     args = parser.parse_args()
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
         if args.show:
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
-        pass
+
+        cv2.imwrite("test.jpg", img.frame)
+        cv2.waitKey(10)
+        retval, buf = cv2.imencode(".jpg", img.frame)
+        if retval:
+            resp = send_image(args.url, buf.tostring())
+            if resp.status_code != 200:
+                print("Problem posting")
