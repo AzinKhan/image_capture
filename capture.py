@@ -20,15 +20,21 @@ class ImageInfo(object):
 
 class MotionDetector(object):
      
-    def __init__(self, cam_num=0, thresh=20):
+    def __init__(self, cam_num=0, thresh=20, width=1280, height=960):
         self.cam_number = cam_num
         self.threshold = thresh
+        self.width = width
+        self.height = height
         self.__current_frame = ImageInfo()
         self.__open_camera__()
         self.__bg = cv2.createBackgroundSubtractorMOG2()
 
     def __open_camera__(self):
         self.__camera = cv2.VideoCapture(self.cam_number)
+        # Manually setting width and height is required for this 
+        # to work on OS X for some reason.
+        self.__camera.set(3, self.width)
+        self.__camera.set(4, self.height)
 
     def __average_motion__(self, frame, channel):
         return cv2.mean(frame)[channel]
