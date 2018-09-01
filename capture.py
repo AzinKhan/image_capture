@@ -3,6 +3,7 @@
 import cv2
 import requests
 import logging
+import argparse
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] %(message)s')
@@ -69,8 +70,16 @@ class MotionDetector(object):
 
 
 if __name__ == "__main__":
-    detector = MotionDetector(cam_num=0, thresh=10)
+    parser = argparse.ArgumentParser(description="A simple motion detector")
+    parser.add_argument("--threshold", metavar="threshold", type=float, default=10, nargs='?', help="Threshold for motion detection.")
+    parser.add_argument("--width", metavar="width", type=int, default=1280, nargs='?', help="Width of image")
+    parser.add_argument("--height", metavar="height", type=int, default=960, nargs='?', help="Height of image")
+    parser.add_argument("--cam", metavar="cam", type=int, default=0, nargs='?', help="Camera ID")
+    parser.add_argument("--show", metavar="show", type=bool, default=False, nargs='?', help="Show images")
+    args = parser.parse_args()
+    detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
-        #cv2.imshow("Motion", img.frame)
-        #cv2.waitKey(10)
+        if args.show:
+            cv2.imshow("Motion", img.frame)
+            cv2.waitKey(10)
         pass
