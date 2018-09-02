@@ -5,6 +5,7 @@ import requests
 import logging
 import argparse
 import os
+import datetime
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] %(message)s')
@@ -23,6 +24,7 @@ class MotionDetector(object):
         self.threshold = thresh
         self.width = width
         self.height = height
+
         self.__current_frame = ImageInfo()
         self.__open_camera__()
         self.__bg = cv2.createBackgroundSubtractorMOG2()
@@ -66,7 +68,10 @@ class MotionDetector(object):
                 raise StopIteration
 
 def send_image(url, image_bytes):
-    files = {"image": image_bytes}
+    fmt = "%Y-%m-%d_%H-%M-%S"
+    nowtime = datetime.datetime.now()
+    datestring = nowtime.strftime(fmt)
+    files = {datestring: image_bytes}
     r = requests.post(url, files=files)
     return r
 
@@ -78,6 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("--cam", metavar="cam", type=int, default=0, nargs='?', help="Camera ID")
     parser.add_argument("--show", metavar="show", type=bool, default=False, nargs='?', help="Show images")
     parser.add_argument("--write", metavar="write", type=bool, default=False, nargs='?', help="Write images to file" )
+    parser.add_argument("--send", metavar="send", type=bool, default=False, nargs='?', help="Upload images to remote server" )
     parser.add_argument("--url", metavar="url", type=str, default="http://0.0.0.0:8000/", nargs='?', help="Remote URL")
     args = parser.parse_args()
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
@@ -86,10 +92,15 @@ if __name__ == "__main__":
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
 
-        cv2.imwrite("test.jpg", img.frame)
-        cv2.waitKey(10)
-        retval, buf = cv2.imencode(".jpg", img.frame)
-        if retval:
-            resp = send_image(args.url, buf.tostring())
-            if resp.status_code != 200:
-                print("Problem posting")
+        if args.write:
+            cv2.imwrite("test.jpg", img.frame)
+            cv2.waitKey(10)
+        
+        if args.send:
+            retval, buf = cv2.imencode(".jpg", img.frame)
+            if retval:
+                resp = send_image(args.url, buf.tostring())
+                if resp.status_code != 200:
+                    logger.error("Problem posting")
+            else:
+                logger.error("Could not  encode image")
