@@ -67,13 +67,15 @@ class MotionDetector(object):
                 logger.info("Motion detection stopped by KeyboardInterrupt")
                 raise StopIteration
 
-def send_image(url, image_bytes):
-    fmt = "%Y-%m-%d_%H-%M-%S"
-    nowtime = datetime.datetime.now()
-    datestring = nowtime.strftime(fmt)
-    files = {datestring: image_bytes}
+def send_image(url, image_bytes, filename):
+    files = {filename: image_bytes}
     r = requests.post(url, files=files)
     return r
+
+def getTime():
+    fmt = "%Y-%m-%d_%H-%M-%S"
+    nowtime = datetime.datetime.now()
+    return nowtime.strftime(fmt)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple motion detector")
@@ -88,19 +90,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
+        filename = getTime() + ".jpg"
+        print(filename)
         if args.show:
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
 
-        if args.write:
-            cv2.imwrite("test.jpg", img.frame)
-            cv2.waitKey(10)
         
         if args.send:
             retval, buf = cv2.imencode(".jpg", img.frame)
             if retval:
-                resp = send_image(args.url, buf.tostring())
-                if resp.status_code != 200:
-                    logger.error("Problem posting")
-            else:
-                logger.error("Could not  encode image")
+                try:
+                    resp = send_image(args.url, buf.tostring(), filename)
+                    if resp.status_code != 200:
+                        logger.error("Non-ok HTTP code %d" % resp.status_code)
+                except requests.exceptions.ConnectionError as e:
+                    print(e)
+                    logger.info("Could not connect to remote server")
+                    #logger.info("Writing image to file until connection is made")
+        else:
+            logger.error("Could not  encode image")
+
+        if args.write:
+            cv2.imwrite(filename, img.frame)
+            cv2.waitKey(10)
