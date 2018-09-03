@@ -91,7 +91,6 @@ if __name__ == "__main__":
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
         filename = getTime() + ".jpg"
-        print(filename)
         if args.show:
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
@@ -107,9 +106,8 @@ if __name__ == "__main__":
                 except requests.exceptions.ConnectionError as e:
                     print(e)
                     logger.info("Could not connect to remote server")
-                    #logger.info("Writing image to file until connection is made")
-        else:
-            logger.error("Could not  encode image")
+            else:
+                logger.error("Could not  encode image")
 
         if args.write:
             cv2.imwrite(filename, img.frame)
