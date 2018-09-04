@@ -73,9 +73,9 @@ def send_image(url, image_bytes, filename):
     return r
 
 def getTime():
-    fmt = ("%Y-%m-%d_%H:%M:%S.%f")
+    fmt = '%Y-%m-%d_%H:%M:%S.%f'
     nowtime = datetime.datetime.now()
-    return nowtime.strftime(fmt)[:3]
+    return nowtime.strftime(fmt)[:-3]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple motion detector")
