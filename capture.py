@@ -91,7 +91,6 @@ if __name__ == "__main__":
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
         filename = getTime() + ".jpg"
-        print(filename)
         if args.show:
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
