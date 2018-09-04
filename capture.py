@@ -73,7 +73,11 @@ def send_image(url, image_bytes, filename):
     return r
 
 def getTime():
+<<<<<<< HEAD
     fmt = ("%Y-%m-%d_%H:%M:%S.%f")[:-3]
+=======
+    fmt = "%Y-%m-%d_%H-%M-%S"
+>>>>>>> 9e6cbd69f5d46c0db07bee9bbdbaf210cc593855
     nowtime = datetime.datetime.now()
     return nowtime.strftime(fmt)
 
@@ -91,6 +95,10 @@ if __name__ == "__main__":
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
     for img in detector.run():
         filename = getTime() + ".jpg"
+<<<<<<< HEAD
+=======
+        print(filename)
+>>>>>>> 9e6cbd69f5d46c0db07bee9bbdbaf210cc593855
         if args.show:
             cv2.imshow("Motion", img.frame)
             cv2.waitKey(10)
@@ -106,8 +114,14 @@ if __name__ == "__main__":
                 except requests.exceptions.ConnectionError as e:
                     print(e)
                     logger.info("Could not connect to remote server")
+<<<<<<< HEAD
             else:
                 logger.error("Could not  encode image")
+=======
+                    #logger.info("Writing image to file until connection is made")
+        else:
+            logger.error("Could not  encode image")
+>>>>>>> 9e6cbd69f5d46c0db07bee9bbdbaf210cc593855
 
         if args.write:
             cv2.imwrite(filename, img.frame)
