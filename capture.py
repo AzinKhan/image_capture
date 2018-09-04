@@ -73,7 +73,7 @@ def send_image(url, image_bytes, filename):
     return r
 
 def getTime():
-    fmt = "%Y-%m-%d_%H-%M-%S"
+    fmt = ("%Y-%m-%d_%H:%M:%S.%f")[:-3]
     nowtime = datetime.datetime.now()
     return nowtime.strftime(fmt)
 
