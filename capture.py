@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
-
-import cv2
 import requests
 import logging
 import argparse
 import os
 import datetime
+from multiprocessing import Process, Queue
+
+import cv2
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] %(message)s')
@@ -13,11 +13,12 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-class ImageInfo(object):
-    def __init__(self):
-        self.motion_val = 0.0
+class ImageInfo:
+    motion_val = 0.0
+    frame = None
 
-class MotionDetector(object):
+
+class MotionDetector:
      
     def __init__(self, cam_num=0, thresh=20, width=1280, height=960):
         self.cam_number = cam_num
@@ -49,33 +50,39 @@ class MotionDetector(object):
         foreground = self.__bg.apply(self.__current_frame.frame)
         self.__current_frame.motion_val = self.__average_motion__(foreground, 0)
     
-    def run(self):
+    def run(self, queue):
         logger.info("Running motion detection with threshold %f", self.threshold)
         while True:
-            try:
-                if self.__read__camera__():
-                    logger.debug("Checking motion value...")
-                    self.__detect_motion__()
-                    if self.__current_frame.motion_val >= self.threshold:
-                        logger.info("Detected motion with value %f" % self.__current_frame.motion_val)
-                        yield self.__current_frame
-                    else:
-                        logger.debug("Motion not detected")
+            if self.__read__camera__():
+                logger.debug("Checking motion value...")
+                self.__detect_motion__()
+                if self.__current_frame.motion_val >= self.threshold:
+                    logger.info("Detected motion with value %f" % self.__current_frame.motion_val)
+                    queue.put(self.__current_frame)
                 else:
-                    logger.debug("No image from camera. Retrying...")
-            except KeyboardInterrupt:
-                logger.info("Motion detection stopped by KeyboardInterrupt")
-                raise StopIteration
+                    logger.debug("Motion not detected")
+            else:
+                logger.debug("No image from camera. Retrying...")
 
-def send_image(url, image_bytes, filename):
-    files = {filename: image_bytes}
-    r = requests.post(url, files=files)
-    return r
+
+def send_image(info_queue):
+    while True:
+        url, image_bytes, filename = info_queue.get()
+        files = {filename: image_bytes}
+        try:
+            logger.info('Posting %s to %s', filename, url)
+            resp = requests.post(url, files=files)
+            if resp.status_code != 200:
+                logger.error("Non-ok HTTP code %d" % resp.status_code)
+        except requests.exceptions.ConnectionError as e:
+            logger.info("Could not connect to remote server: %s", e)
+
 
 def getTime():
     fmt = '%Y-%m-%d_%H:%M:%S.%f'
     nowtime = datetime.datetime.now()
     return nowtime.strftime(fmt)[:-3]
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple motion detector")
@@ -83,32 +90,50 @@ if __name__ == "__main__":
     parser.add_argument("--width", metavar="width", type=int, default=1280, nargs='?', help="Width of image")
     parser.add_argument("--height", metavar="height", type=int, default=960, nargs='?', help="Height of image")
     parser.add_argument("--cam", metavar="cam", type=int, default=0, nargs='?', help="Camera ID")
-    parser.add_argument("--show", metavar="show", type=bool, default=False, nargs='?', help="Show images")
-    parser.add_argument("--write", metavar="write", type=bool, default=False, nargs='?', help="Write images to file" )
-    parser.add_argument("--send", metavar="send", type=bool, default=False, nargs='?', help="Upload images to remote server" )
+    parser.add_argument("--show", action="store_true", help="Show images")
+    parser.add_argument("--write", action="store_true", help="Write images to file" )
+    parser.add_argument("--send", action="store_true", help="Upload images to remote server" )
     parser.add_argument("--url", metavar="url", type=str, default="http://0.0.0.0:8000/", nargs='?', help="Remote URL")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Allow debug logs.")
     args = parser.parse_args()
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
     detector = MotionDetector(cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height)
-    for img in detector.run():
-        filename = getTime() + ".jpg"
-        if args.show:
-            cv2.imshow("Motion", img.frame)
-            cv2.waitKey(10)
+    image_queue = Queue()
+    info_queue = Queue()
 
-        
-        if args.send:
-            retval, buf = cv2.imencode(".jpg", img.frame)
-            if retval:
-                try:
-                    resp = send_image(args.url, buf.tostring(), filename)
-                    if resp.status_code != 200:
-                        logger.error("Non-ok HTTP code %d" % resp.status_code)
-                except requests.exceptions.ConnectionError as e:
-                    print(e)
-                    logger.info("Could not connect to remote server")
-            else:
-                logger.error("Could not  encode image")
+    sender = Process(target=send_image, args=(info_queue,))
+    sender.daemon = True
+    sender.start()
 
-        if args.write:
-            cv2.imwrite(filename, img.frame)
-            cv2.waitKey(10)
+    det = Process(target=detector.run, args=(image_queue,))
+    det.daemon = True
+    det.start()
+
+    running = True
+    while running:
+        try:
+            img = image_queue.get()
+            filename = getTime() + ".jpg"
+            if args.show:
+                cv2.imshow("Motion", img.frame)
+                cv2.waitKey(10)
+            
+            if args.send:
+                retval, buf = cv2.imencode(".jpg", img.frame)
+                if retval:
+                    info_queue.put((args.url, buf.tostring(), filename))
+                else:
+                    logger.error("Could not  encode image")
+
+            if args.write:
+                cv2.imwrite(filename, img.frame)
+                cv2.waitKey(10)
+        except KeyboardInterrupt:
+            logger.info('Stopping processes...')
+            sender.terminate()
+            det.terminate()
+            sender.join()
+            det.join()
+            logger.info('All processes stopped.')
+            running = False
