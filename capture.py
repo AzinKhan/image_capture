@@ -5,7 +5,10 @@ import os
 import datetime
 from multiprocessing import Process, Queue
 
-import cv2
+from cv2 import (
+    createBackgroundSubtractorMOG2, VideoCapture, mean,
+    imencode, waitKey, imwrite, imshow
+)
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] %(message)s')
@@ -20,45 +23,46 @@ class ImageInfo:
 
 class MotionDetector:
      
-    def __init__(self, cam_num=0, thresh=20, width=1280, height=960):
+    def __init__(self, *, cam_num=0, thresh=20, width=1280, height=960):
         self.cam_number = cam_num
         self.threshold = thresh
         self.width = width
         self.height = height
 
-        self.__current_frame = ImageInfo()
-        self.__open_camera__()
-        self.__bg = cv2.createBackgroundSubtractorMOG2()
+        self._current_frame = ImageInfo()
+        self._open_camera()
+        self._bg = createBackgroundSubtractorMOG2()
 
-    def __open_camera__(self):
-        self.__camera = cv2.VideoCapture(self.cam_number)
+    def _open_camera(self):
+        self._camera = VideoCapture(self.cam_number)
         # Manually setting width and height is required for this 
         # to work on OS X for some reason.
-        self.__camera.set(3, self.width)
-        self.__camera.set(4, self.height)
+        self._camera.set(3, self.width)
+        self._camera.set(4, self.height)
 
-    def __average_motion__(self, frame, channel):
-        return cv2.mean(frame)[channel]
+    @staticmethod
+    def _average_motion(frame, channel):
+        return mean(frame)[channel]
     
-    def __read__camera__(self):
-        return_val, frame = self.__camera.read()
+    def _read__camera(self):
+        return_val, frame = self._camera.read()
         if return_val:
-            self.__current_frame.frame = frame
+            self._current_frame.frame = frame
         return return_val
 
-    def __detect_motion__(self):
-        foreground = self.__bg.apply(self.__current_frame.frame)
-        self.__current_frame.motion_val = self.__average_motion__(foreground, 0)
+    def _detect_motion(self):
+        foreground = self._bg.apply(self._current_frame.frame)
+        self._current_frame.motion_val = self._average_motion(foreground, 0)
     
     def run(self, queue):
         logger.info("Running motion detection with threshold %f", self.threshold)
         while True:
-            if self.__read__camera__():
+            if self._read__camera():
                 logger.debug("Checking motion value...")
-                self.__detect_motion__()
-                if self.__current_frame.motion_val >= self.threshold:
-                    logger.info("Detected motion with value %f" % self.__current_frame.motion_val)
-                    queue.put(self.__current_frame)
+                self._detect_motion()
+                if self._current_frame.motion_val >= self.threshold:
+                    logger.info("Detected motion with value %f" % self._current_frame.motion_val)
+                    queue.put(self._current_frame)
                 else:
                     logger.debug("Motion not detected")
             else:
@@ -116,19 +120,19 @@ if __name__ == "__main__":
             img = image_queue.get()
             filename = getTime() + ".jpg"
             if args.show:
-                cv2.imshow("Motion", img.frame)
-                cv2.waitKey(10)
+                imshow("Motion", img.frame)
+                waitKey(10)
             
             if args.send:
-                retval, buf = cv2.imencode(".jpg", img.frame)
+                retval, buf = imencode(".jpg", img.frame)
                 if retval:
                     info_queue.put((args.url, buf.tostring(), filename))
                 else:
                     logger.error("Could not  encode image")
 
             if args.write:
-                cv2.imwrite(filename, img.frame)
-                cv2.waitKey(10)
+                imwrite(filename, img.frame)
+                waitKey(10)
         except KeyboardInterrupt:
             logger.info('Stopping processes...')
             sender.terminate()
