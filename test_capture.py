@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-import pytest_mock
 
 from capture import MotionDetector, getTime
 
@@ -9,17 +8,16 @@ from capture import MotionDetector, getTime
 class MockCamera:
 
     def read(self):
-        return True, 'frame' 
+        return True, 'frame'
 
 
 class MockDetector(MotionDetector):
 
     def __init__(self):
         super().__init__()
-    
+
     def _open_camera(self):
         self._camera = MockCamera()
-    
 
 
 @pytest.fixture
@@ -52,7 +50,7 @@ class TestMotionDetector:
         assert detector.height == init_args['height']
         mock_open.assert_called()
         mock_subtractor.assert_called()
-    
+
     def test_open_camera(self, mocker):
         mock_video_capture = mocker.patch('capture.VideoCapture')
         detector = MotionDetector()
@@ -60,21 +58,18 @@ class TestMotionDetector:
 
         mock_video_capture.assert_called_with(0)
         # TODO: check camera.set
-    
+
     def test_average_motion(self, mocker):
         mock_mean = mocker.patch('capture.mean')
         frame = list(range(10))
-        channel = 1
-        result = MotionDetector._average_motion(frame, channel)
 
         mock_mean.assert_called_with(frame)
 
     @pytest.mark.parametrize('return_val, frame', [
         (True, 'frame'),
-    ])    
+    ])
     def test_read_camera(self, mocker, return_val, frame, test_detector):
         result_val = test_detector._read__camera()
         assert result_val == return_val
         if return_val:
             assert test_detector._current_frame.frame == frame
-    
