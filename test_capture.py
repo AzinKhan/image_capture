@@ -63,6 +63,7 @@ class TestMotionDetector:
         mock_mean = mocker.patch('capture.mean')
         frame = list(range(10))
 
+        MotionDetector._average_motion(frame, 1)
         mock_mean.assert_called_with(frame)
 
     @pytest.mark.parametrize('return_val, frame', [
