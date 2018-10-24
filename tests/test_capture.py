@@ -1,8 +1,8 @@
-from datetime import datetime
-
 import pytest
 
-from capture import MotionDetector, getTime
+from capture import MotionDetector
+
+MODULE = 'capture.capture'
 
 
 class MockCamera:
@@ -25,18 +25,12 @@ def test_detector():
     return MockDetector()
 
 
-@pytest.mark.freeze_time(datetime(2017, 3, 1, 1, 1, 1, 25000))
-def test_get_time():
-    time_string = getTime()
-    assert time_string == '2017-03-01_01:01:01.025'
-
-
 class TestMotionDetector:
 
     def test_init(self, mocker):
-        mock_open = mocker.patch('capture.MotionDetector._open_camera')
+        mock_open = mocker.patch(f'{MODULE}.MotionDetector._open_camera')
         mock_subtractor = mocker.patch(
-            'capture.createBackgroundSubtractorMOG2'
+            f'{MODULE}.createBackgroundSubtractorMOG2'
         )
 
         init_args = {
@@ -52,7 +46,7 @@ class TestMotionDetector:
         mock_subtractor.assert_called()
 
     def test_open_camera(self, mocker):
-        mock_video_capture = mocker.patch('capture.VideoCapture')
+        mock_video_capture = mocker.patch(f'{MODULE}.VideoCapture')
         detector = MotionDetector()
         detector._open_camera()
 
@@ -60,7 +54,7 @@ class TestMotionDetector:
         # TODO: check camera.set
 
     def test_average_motion(self, mocker):
-        mock_mean = mocker.patch('capture.mean')
+        mock_mean = mocker.patch(f'{MODULE}.mean')
         frame = list(range(10))
 
         MotionDetector._average_motion(frame, 1)
