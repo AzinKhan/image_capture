@@ -4,6 +4,8 @@ import pytest
 
 from capture import MotionDetector, getTime
 
+MODULE = 'capture.capture'
+
 
 class MockCamera:
 
@@ -34,9 +36,9 @@ def test_get_time():
 class TestMotionDetector:
 
     def test_init(self, mocker):
-        mock_open = mocker.patch('capture.MotionDetector._open_camera')
+        mock_open = mocker.patch(f'{MODULE}.MotionDetector._open_camera')
         mock_subtractor = mocker.patch(
-            'capture.createBackgroundSubtractorMOG2'
+            f'{MODULE}.createBackgroundSubtractorMOG2'
         )
 
         init_args = {
@@ -52,7 +54,7 @@ class TestMotionDetector:
         mock_subtractor.assert_called()
 
     def test_open_camera(self, mocker):
-        mock_video_capture = mocker.patch('capture.VideoCapture')
+        mock_video_capture = mocker.patch(f'{MODULE}.VideoCapture')
         detector = MotionDetector()
         detector._open_camera()
 
@@ -60,7 +62,7 @@ class TestMotionDetector:
         # TODO: check camera.set
 
     def test_average_motion(self, mocker):
-        mock_mean = mocker.patch('capture.mean')
+        mock_mean = mocker.patch(f'{MODULE}.mean')
         frame = list(range(10))
 
         MotionDetector._average_motion(frame, 1)
