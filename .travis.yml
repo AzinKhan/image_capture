@@ -4,6 +4,9 @@ python:
 # command to install dependencies
 install:
   - pip install -r requirements.txt
+  - pip install flake8
 # command to run tests
 script:
   - pytest --cov=capture
+after_success:
+  - flake8
