@@ -1,0 +1,15 @@
+language: python
+python:
+  - "3.7-dev"
+# command to install dependencies
+env:
+  - CODECOV_TOKEN="410c93a1-a5ad-458b-98e9-9353576d3897"
+install:
+  - pip install -r requirements.txt
+  - pip install flake8 codecov
+# command to run tests
+script:
+  - pytest --cov=capture
+after_success:
+  - codecov
+  - flake8
