@@ -4,6 +4,7 @@ import pytest
 
 from capture import getTime
 
+
 @pytest.mark.freeze_time(datetime(2017, 3, 1, 1, 1, 1, 25000))
 def test_get_time():
     time_string = getTime()

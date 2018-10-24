@@ -1,3 +1,4 @@
+"""Some useful utility functions."""
 import logging
 from datetime import datetime
 
@@ -10,6 +11,16 @@ logger = logging.getLogger()
 
 
 def send_image(info_queue):
+    """
+    Send_image uploads files from a queue via HTTP requests.
+
+    Args:
+        info_queue: The queue from which to read values.
+
+    Returns:
+        None
+
+    """
     while True:
         url, image_bytes, filename = info_queue.get()
         files = {filename: image_bytes}
@@ -22,7 +33,8 @@ def send_image(info_queue):
             logger.info("Could not connect to remote server: %s", e)
 
 
-def getTime():
+def getTime() -> str:
+    """Get_Time gets the current time and returns it as a formatted string."""
     fmt = '%Y-%m-%d_%H:%M:%S.%f'
     nowtime = datetime.now()
     return nowtime.strftime(fmt)[:-3]
