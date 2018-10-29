@@ -55,7 +55,7 @@ class MotionDetector:
     def _average_motion(frame, channel) -> float:
         return mean(frame)[channel]
 
-    def _read__camera(self) -> bool:
+    def _read_camera(self) -> bool:
         return_val, frame = self._camera.read()
         if return_val:
             self._current_frame.frame = frame
@@ -80,7 +80,7 @@ class MotionDetector:
             "Running motion detection with threshold %f", self.threshold
         )
         while True:
-            if self._read__camera():
+            if self._read_camera():
                 logger.debug("Checking motion value...")
                 self._detect_motion()
                 if self._current_frame.motion_val >= self.threshold:
