@@ -5,8 +5,7 @@ from cv2 import (
     createBackgroundSubtractorMOG2, VideoCapture, mean,
 )
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
 logger = logging.getLogger()
 
@@ -21,7 +20,9 @@ class ImageInfo:
 class MotionDetector:
     """MotionDetector captures images from a camera and detects if motion."""
 
-    def __init__(self, *, cam_num=0, thresh=20, width=1280, height=960):
+    def __init__(
+        self, *, cam_num=0, thresh=20, width=1280, height=960
+    ) -> None:
         """
         __init__ opens the camera and initializes the background subtractor.
 
@@ -44,7 +45,13 @@ class MotionDetector:
         self._open_camera()
         self._bg = createBackgroundSubtractorMOG2()
 
-    def _open_camera(self):
+    def __repr__(self) -> str:
+        return (
+            f'MotionDetector <width={self.width}> <height={self.height}> ' +
+            f'<threshold={self.threshold}> <cam_number={self.cam_number}>'
+        )
+
+    def _open_camera(self) -> None:
         self._camera = VideoCapture(self.cam_number)
         # Manually setting width and height is required for this
         # to work on OS X for some reason.
@@ -61,11 +68,11 @@ class MotionDetector:
             self._current_frame.frame = frame
         return return_val
 
-    def _detect_motion(self):
+    def _detect_motion(self) -> None:
         foreground = self._bg.apply(self._current_frame.frame)
         self._current_frame.motion_val = self._average_motion(foreground, 0)
 
-    def run(self, queue):
+    def run(self, queue) -> None:
         """
         Run performs the motion detection in an infinite loop.
 

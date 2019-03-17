@@ -1,6 +1,7 @@
 """Some useful utility functions."""
 import logging
 from datetime import datetime
+from http import HTTPStatus
 
 import requests
 
@@ -10,16 +11,16 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-def make_request(*, url, files):
+def make_request(*, url, files) -> None:
     try:
         resp = requests.post(url, files=files)
-        if resp.status_code != 200:
+        if resp.status_code != HTTPStatus.OK:
             logger.error("Non-ok HTTP code %d" % resp.status_code)
     except requests.exceptions.ConnectionError as e:
         logger.info("Could not connect to remote server: %s", e)
 
 
-def send_image(info_queue):
+def send_image(info_queue) -> None:
     """
     Send_image uploads files from a queue via HTTP requests.
 
