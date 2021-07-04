@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import cv2
 
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 logger = logging.getLogger()
 
 
@@ -30,9 +30,7 @@ class Image:
 class MotionDetector:
     """MotionDetector captures images from a camera and detects if motion."""
 
-    def __init__(
-        self, *, cam_num=0, thresh=20, width=1280, height=960
-    ) -> None:
+    def __init__(self, *, cam_num=0, thresh=20, width=1280, height=960) -> None:
         """
         __init__ opens the camera and initializes the background subtractor.
 
@@ -55,8 +53,8 @@ class MotionDetector:
 
     def __repr__(self) -> str:
         return (
-            f'MotionDetector <width={self.width}> <height={self.height}> ' +
-            f'<threshold={self.threshold}> <cam_number={self.cam_number}>'
+            f"MotionDetector <width={self.width}> <height={self.height}> "
+            + f"<threshold={self.threshold}> <cam_number={self.cam_number}>"
         )
 
     def _open_camera(self) -> None:
@@ -70,9 +68,7 @@ class MotionDetector:
         """
         Run performs the motion detection in an infinite loop.
         """
-        logger.info(
-            "Running motion detection with threshold %f", self.threshold
-        )
+        logger.info("Running motion detection with threshold %f", self.threshold)
         bg = cv2.createBackgroundSubtractorMOG2()
         while True:
             return_val, frame = self._camera.read()
@@ -86,8 +82,5 @@ class MotionDetector:
                 logger.debug("Motion not detected")
                 continue
 
-            logger.info(
-                "Detected motion with value %f",
-                motion_val
-            )
+            logger.info("Detected motion with value %f", motion_val)
             yield Image(frame=frame)

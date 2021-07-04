@@ -5,10 +5,7 @@ from http import HTTPStatus
 
 import requests
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 
 logger = logging.getLogger()
 
@@ -36,12 +33,12 @@ def send_image(info_queue) -> None:
     while True:
         url, image_bytes, filename = info_queue.get()
         files = {filename: image_bytes}
-        logger.info('Posting %s to %s', filename, url)
+        logger.info("Posting %s to %s", filename, url)
         make_request(url=url, files=files)
 
 
 def getTime() -> str:
     """Get_Time gets the current time and returns it as a formatted string."""
-    fmt = '%Y-%m-%d_%H:%M:%S.%f'
+    fmt = "%Y-%m-%d_%H:%M:%S.%f"
     nowtime = datetime.now()
     return nowtime.strftime(fmt)[:-3]

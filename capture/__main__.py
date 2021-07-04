@@ -4,49 +4,53 @@ from multiprocessing import Process, Queue
 
 from capture import MotionDetector, getTime, send_image
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 
 logger = logging.getLogger()
 
 parser = argparse.ArgumentParser(description="A simple motion detector")
 parser.add_argument(
-    "--threshold", metavar="threshold", type=float, default=10, nargs='?',
-    help="Threshold for motion detection."
+    "--threshold",
+    metavar="threshold",
+    type=float,
+    default=10,
+    nargs="?",
+    help="Threshold for motion detection.",
 )
 parser.add_argument(
-    "--width", metavar="width", type=int, default=1280,
-    nargs='?', help="Width of image"
+    "--width", metavar="width", type=int, default=1280, nargs="?", help="Width of image"
 )
 parser.add_argument(
-    "--height", metavar="height", type=int, default=960,
-    nargs='?', help="Height of image"
+    "--height",
+    metavar="height",
+    type=int,
+    default=960,
+    nargs="?",
+    help="Height of image",
 )
 parser.add_argument(
-    "--cam", metavar="cam", type=int, default=0,
-    nargs='?', help="Camera ID"
+    "--cam", metavar="cam", type=int, default=0, nargs="?", help="Camera ID"
 )
 parser.add_argument("--show", action="store_true", help="Show images")
-parser.add_argument(
-    "--write", action="store_true", help="Write images to file"
-)
+parser.add_argument("--write", action="store_true", help="Write images to file")
 parser.add_argument(
     "--send", action="store_true", help="Upload images to remote server"
 )
 parser.add_argument(
-    "--url", metavar="url", type=str, default="http://0.0.0.0:8000/",
-    nargs='?', help="Remote URL"
+    "--url",
+    metavar="url",
+    type=str,
+    default="http://0.0.0.0:8000/",
+    nargs="?",
+    help="Remote URL",
 )
-parser.add_argument(
-    "--verbose", "-v", action="store_true", help="Allow debug logs."
-)
+parser.add_argument("--verbose", "-v", action="store_true", help="Allow debug logs.")
 args = parser.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
 detector = MotionDetector(
-    cam_num=args.cam, thresh=args.threshold,
-    width=args.width, height=args.height
+    cam_num=args.cam, thresh=args.threshold, width=args.width, height=args.height
 )
 
 if args.send:
@@ -73,9 +77,9 @@ while running:
             if args.write:
                 img.write(filename)
     except KeyboardInterrupt:
-        logger.info('Stopping processes...')
+        logger.info("Stopping processes...")
         if args.send:
             sender.terminate()
             sender.join()
-        logger.info('All processes stopped.')
+        logger.info("All processes stopped.")
         running = False
