@@ -47,15 +47,17 @@ parser.add_argument(
 args = parser.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
+
 detector = MotionDetector(
     cam_num=args.cam, thresh=args.threshold,
     width=args.width, height=args.height
 )
-info_queue = Queue()
 
-sender = Process(target=send_image, args=(info_queue,))
-sender.daemon = True
-sender.start()
+if args.send:
+    info_queue = Queue()
+    sender = Process(target=send_image, args=(info_queue,))
+    sender.daemon = True
+    sender.start()
 
 running = True
 while running:
@@ -71,14 +73,15 @@ while running:
                 if retval:
                     info_queue.put((args.url, buf.tostring(), filename))
                 else:
-                    logger.error("Could not  encode image")
+                    logger.error("Could not encode image")
 
             if args.write:
                 imwrite(filename, img.frame)
                 waitKey(10)
     except KeyboardInterrupt:
         logger.info('Stopping processes...')
-        sender.terminate()
-        sender.join()
+        if args.send:
+            sender.terminate()
+            sender.join()
         logger.info('All processes stopped.')
         running = False
