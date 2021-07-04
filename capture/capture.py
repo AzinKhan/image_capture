@@ -1,20 +1,30 @@
 """Capture images from a camera and detect motion using OpenCV."""
 import logging
-from typing import Iterable, Any
+from typing import Iterable, Any, Optional
 from dataclasses import dataclass
 
-from cv2 import (
-    createBackgroundSubtractorMOG2, VideoCapture, mean
-)
+import cv2
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 logger = logging.getLogger()
 
 
 @dataclass
-class ImageInfo:
-    motion_val: float
+class Image:
     frame: Any
+
+    def show(self, title: str):
+        cv2.imshow(title, self.frame)
+        cv2.waitKey(10)
+
+    def encode(self) -> Optional[str]:
+        retval, buf = cv2.imencode(".jpg", self.frame)
+        if not retval:
+            return None
+        return buf.tostring()
+
+    def write(self, filename: str):
+        cv2.imencode(filename, self.frame)
 
 
 class MotionDetector:
@@ -50,20 +60,20 @@ class MotionDetector:
         )
 
     def _open_camera(self) -> None:
-        self._camera = VideoCapture(self.cam_number)
+        self._camera = cv2.VideoCapture(self.cam_number)
         # Manually setting width and height is required for this
         # to work on OS X for some reason.
         self._camera.set(3, self.width)
         self._camera.set(4, self.height)
 
-    def run(self) -> Iterable[ImageInfo]:
+    def run(self) -> Iterable[Image]:
         """
         Run performs the motion detection in an infinite loop.
         """
         logger.info(
             "Running motion detection with threshold %f", self.threshold
         )
-        bg = createBackgroundSubtractorMOG2()
+        bg = cv2.createBackgroundSubtractorMOG2()
         while True:
             return_val, frame = self._camera.read()
             if not return_val:
@@ -71,7 +81,7 @@ class MotionDetector:
                 continue
 
             foreground = bg.apply(frame)
-            motion_val = mean(foreground)[0]
+            motion_val = cv2.mean(foreground)[0]
             if motion_val < self.threshold:
                 logger.debug("Motion not detected")
                 continue
@@ -80,4 +90,4 @@ class MotionDetector:
                 "Detected motion with value %f",
                 motion_val
             )
-            yield ImageInfo(frame=frame, motion_val=motion_val)
+            yield Image(frame=frame)

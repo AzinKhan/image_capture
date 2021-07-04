@@ -2,10 +2,6 @@ import logging
 import argparse
 from multiprocessing import Process, Queue
 
-from cv2 import (
-    imencode, waitKey, imwrite, imshow
-)
-
 from capture import MotionDetector, getTime, send_image
 
 logging.basicConfig(level=logging.INFO,
@@ -63,21 +59,19 @@ running = True
 while running:
     try:
         for img in detector.run():
-            filename = getTime() + ".jpg"
             if args.show:
-                imshow("Motion", img.frame)
-                waitKey(10)
+                img.show("Motion")
 
+            filename = getTime() + ".jpg"
             if args.send:
-                retval, buf = imencode(".jpg", img.frame)
-                if retval:
-                    info_queue.put((args.url, buf.tostring(), filename))
+                encoded = img.encode()
+                if encoded:
+                    info_queue.put((args.url, encoded, filename))
                 else:
                     logger.error("Could not encode image")
 
             if args.write:
-                imwrite(filename, img.frame)
-                waitKey(10)
+                img.write(filename)
     except KeyboardInterrupt:
         logger.info('Stopping processes...')
         if args.send:
