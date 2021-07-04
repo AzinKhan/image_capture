@@ -1,7 +1,7 @@
 import logging
 import argparse
-
 from multiprocessing import Process, Queue
+
 from cv2 import (
     imencode, waitKey, imwrite, imshow
 )
@@ -51,41 +51,34 @@ detector = MotionDetector(
     cam_num=args.cam, thresh=args.threshold,
     width=args.width, height=args.height
 )
-image_queue = Queue()
 info_queue = Queue()
 
 sender = Process(target=send_image, args=(info_queue,))
 sender.daemon = True
 sender.start()
 
-det = Process(target=detector.run, args=(image_queue,))
-det.daemon = True
-det.start()
-
 running = True
 while running:
     try:
-        img = image_queue.get()
-        filename = getTime() + ".jpg"
-        if args.show:
-            imshow("Motion", img.frame)
-            waitKey(10)
+        for img in detector.run():
+            filename = getTime() + ".jpg"
+            if args.show:
+                imshow("Motion", img.frame)
+                waitKey(10)
 
-        if args.send:
-            retval, buf = imencode(".jpg", img.frame)
-            if retval:
-                info_queue.put((args.url, buf.tostring(), filename))
-            else:
-                logger.error("Could not  encode image")
+            if args.send:
+                retval, buf = imencode(".jpg", img.frame)
+                if retval:
+                    info_queue.put((args.url, buf.tostring(), filename))
+                else:
+                    logger.error("Could not  encode image")
 
-        if args.write:
-            imwrite(filename, img.frame)
-            waitKey(10)
+            if args.write:
+                imwrite(filename, img.frame)
+                waitKey(10)
     except KeyboardInterrupt:
         logger.info('Stopping processes...')
         sender.terminate()
-        det.terminate()
         sender.join()
-        det.join()
         logger.info('All processes stopped.')
         running = False

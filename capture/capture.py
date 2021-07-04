@@ -1,12 +1,12 @@
 """Capture images from a camera and detect motion using OpenCV."""
 import logging
+from typing import Iterable
 
 from cv2 import (
     createBackgroundSubtractorMOG2, VideoCapture, mean,
 )
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
-
 logger = logging.getLogger()
 
 
@@ -72,16 +72,9 @@ class MotionDetector:
         foreground = self._bg.apply(self._current_frame.frame)
         self._current_frame.motion_val = self._average_motion(foreground, 0)
 
-    def run(self, queue) -> None:
+    def run(self) -> Iterable[ImageInfo]:
         """
         Run performs the motion detection in an infinite loop.
-
-        Args:
-            queue: A queue in which to put the results.
-
-        Returns:
-            None
-
         """
         logger.info(
             "Running motion detection with threshold %f", self.threshold
@@ -95,7 +88,7 @@ class MotionDetector:
                         "Detected motion with value %f",
                         self._current_frame.motion_val
                     )
-                    queue.put(self._current_frame)
+                    yield self._current_frame
                 else:
                     logger.debug("Motion not detected")
             else:

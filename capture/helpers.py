@@ -5,8 +5,10 @@ from http import HTTPStatus
 
 import requests
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(message)s'
+)
 
 logger = logging.getLogger()
 
