@@ -1,20 +1,20 @@
 """Capture images from a camera and detect motion using OpenCV."""
 import logging
-from typing import Iterable
+from typing import Iterable, Any
+from dataclasses import dataclass
 
 from cv2 import (
-    createBackgroundSubtractorMOG2, VideoCapture, mean,
+    createBackgroundSubtractorMOG2, VideoCapture, mean
 )
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 logger = logging.getLogger()
 
 
+@dataclass
 class ImageInfo:
-    """A simple record class."""
-
-    motion_val = 0.0
-    frame = None
+    motion_val: float
+    frame: Any
 
 
 class MotionDetector:
@@ -41,9 +41,7 @@ class MotionDetector:
         self.width = width
         self.height = height
 
-        self._current_frame = ImageInfo()
         self._open_camera()
-        self._bg = createBackgroundSubtractorMOG2()
 
     def __repr__(self) -> str:
         return (
@@ -58,20 +56,6 @@ class MotionDetector:
         self._camera.set(3, self.width)
         self._camera.set(4, self.height)
 
-    @staticmethod
-    def _average_motion(frame, channel) -> float:
-        return mean(frame)[channel]
-
-    def _read_camera(self) -> bool:
-        return_val, frame = self._camera.read()
-        if return_val:
-            self._current_frame.frame = frame
-        return return_val
-
-    def _detect_motion(self) -> None:
-        foreground = self._bg.apply(self._current_frame.frame)
-        self._current_frame.motion_val = self._average_motion(foreground, 0)
-
     def run(self) -> Iterable[ImageInfo]:
         """
         Run performs the motion detection in an infinite loop.
@@ -79,17 +63,21 @@ class MotionDetector:
         logger.info(
             "Running motion detection with threshold %f", self.threshold
         )
+        bg = createBackgroundSubtractorMOG2()
         while True:
-            if self._read_camera():
-                logger.debug("Checking motion value...")
-                self._detect_motion()
-                if self._current_frame.motion_val >= self.threshold:
-                    logger.info(
-                        "Detected motion with value %f",
-                        self._current_frame.motion_val
-                    )
-                    yield self._current_frame
-                else:
-                    logger.debug("Motion not detected")
-            else:
+            return_val, frame = self._camera.read()
+            if not return_val:
                 logger.debug("No image from camera. Retrying...")
+                continue
+
+            foreground = bg.apply(frame)
+            motion_val = mean(foreground)[0]
+            if motion_val < self.threshold:
+                logger.debug("Motion not detected")
+                continue
+
+            logger.info(
+                "Detected motion with value %f",
+                motion_val
+            )
+            yield ImageInfo(frame=frame, motion_val=motion_val)
