@@ -9,13 +9,15 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 logger = logging.getLogger()
 
 
+WAIT_TIME = 10  # milliseconds
+
 @dataclass
 class Image:
     frame: Any
 
     def show(self, title: str):
         cv2.imshow(title, self.frame)
-        cv2.waitKey(10)
+        cv2.waitKey(WAIT_TIME)
 
     def encode(self) -> Optional[str]:
         retval, buf = cv2.imencode(".jpg", self.frame)
@@ -25,6 +27,7 @@ class Image:
 
     def write(self, filename: str):
         cv2.imencode(filename, self.frame)
+        cv2.waitKey(WAIT_TIME)
 
 
 class MotionDetector:
