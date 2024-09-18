@@ -19,22 +19,28 @@ def make_request(*, url, files) -> None:
         logger.info("Could not connect to remote server: %s", e)
 
 
-def send_image(info_queue) -> None:
+def send_image(url: str, image: bytes, filename: str) -> None:
     """
-    Send_image uploads files from a queue via HTTP requests.
+    Send_image uploads the given file to the URL via HTTP.
 
     Args:
-        info_queue: The queue from which to read values.
+        url: URL to use for upload.
+        image: Raw bytes of the image
+        filename: Filename of the image
 
     Returns:
         None
 
     """
+    files = {filename: image}
+    logger.info("Posting %s to %s", filename, url)
+    make_request(url=url, files=files)
+
+
+def read_and_send_image(image_queue) -> None:
     while True:
-        url, image_bytes, filename = info_queue.get()
-        files = {filename: image_bytes}
-        logger.info("Posting %s to %s", filename, url)
-        make_request(url=url, files=files)
+        url, image, filename = image_queue.get()
+        send_image(url, image, filename)
 
 
 def get_time() -> str:

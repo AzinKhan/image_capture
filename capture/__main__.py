@@ -2,7 +2,7 @@ import logging
 import argparse
 from multiprocessing import Process, Queue
 
-from capture import MotionDetector, get_time, send_image
+from capture import MotionDetector, get_time, read_and_send_image
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 
@@ -55,7 +55,7 @@ detector = MotionDetector(
 
 if args.send:
     info_queue = Queue()
-    sender = Process(target=send_image, args=(info_queue,))
+    sender = Process(target=read_and_send_image, args=(info_queue,))
     sender.daemon = True
     sender.start()
 
