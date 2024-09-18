@@ -37,7 +37,7 @@ def send_image(info_queue) -> None:
         make_request(url=url, files=files)
 
 
-def getTime() -> str:
+def get_time() -> str:
     """Get_Time gets the current time and returns it as a formatted string."""
     fmt = "%Y-%m-%d_%H:%M:%S.%f"
     nowtime = datetime.now()

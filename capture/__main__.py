@@ -2,7 +2,7 @@ import logging
 import argparse
 from multiprocessing import Process, Queue
 
-from capture import MotionDetector, getTime, send_image
+from capture import MotionDetector, get_time, send_image
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 
@@ -66,7 +66,7 @@ while running:
             if args.show:
                 img.show("Motion")
 
-            filename = getTime() + ".jpg"
+            filename = get_time() + ".jpg"
             if args.send:
                 encoded = img.encode()
                 if encoded:
