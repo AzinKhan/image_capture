@@ -59,8 +59,7 @@ if args.send:
     sender.daemon = True
     sender.start()
 
-running = True
-while running:
+while True:
     try:
         for img in detector.run():
             if args.show:
@@ -82,4 +81,4 @@ while running:
             sender.terminate()
             sender.join()
         logger.info("All processes stopped.")
-        running = False
+        break
