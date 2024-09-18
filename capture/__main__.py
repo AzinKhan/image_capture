@@ -18,7 +18,12 @@ parser.add_argument(
     help="Threshold for motion detection.",
 )
 parser.add_argument(
-    "--width", metavar="width", type=int, default=1280, nargs="?", help="Width of image"
+    "--width",
+    metavar="width",
+    type=int,
+    default=1280,
+    nargs="?",
+    help="Width of image",
 )
 parser.add_argument(
     "--height",
